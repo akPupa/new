@@ -18,7 +18,7 @@ function App() {
   const fetchReviews = async () => {
     try {
       const response = await axios.get(
-        `${API_BASE_URL}api/get`
+        `${API_BASE_URL}/api/get`
       );
 
       setApiData(response.data);
@@ -34,7 +34,7 @@ function App() {
     }
 
     try {
-      await axios.post(`${API_BASE_URL}apidata`, {
+      await axios.post(`${API_BASE_URL}/apidata`, {
         movieName,
         movieReview,
       });
@@ -51,7 +51,7 @@ function App() {
   const deleteAllFunc = async () => {
     try {
       await axios.delete(
-        `${API_BASE_URL}api/deleteall`
+        `${API_BASE_URL}/api/deleteall`
       );
 
       fetchReviews();
@@ -63,7 +63,7 @@ function App() {
   const deleteReview = async (id) => {
     try {
       await axios.delete(
-        `${API_BASE_URL}api/delete/${id}`
+        `${API_BASE_URL}/api/delete/${id}`
       );
 
       fetchReviews();
@@ -80,7 +80,7 @@ function App() {
 
     try {
       await axios.put(
-        `${API_BASE_URL}api/update`,
+        `${API_BASE_URL}/api/update`,
         {
           id,
           movieReview: newReview,
