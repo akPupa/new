@@ -5,124 +5,130 @@ const bodyParser = require("body-parser");
 
 const app = express();
 
-const PORT = process.env.PORT || 8000
+const PORT = process.env.PORT || 8000;
 
 app.use(cors());
-
-app.use(express.json())
-app.use(bodyParser.urlencoded({extended: true}))
+app.use(express.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 const db = mysql.createConnection({
-    host: "localhost",
-    user: "nikhil",
-    password: "password",
-    database: "crud"
-})
+  host: process.env.MYSQLHOST || "localhost",
+  user: process.env.MYSQLUSER || "nikhil",
+  password: process.env.MYSQLPASSWORD || "password",
+  database: process.env.MYSQLDATABASE || "crud",
+  port: process.env.MYSQLPORT
+    ? Number(process.env.MYSQLPORT)
+    : 3306,
+});
 
-db.connect(()=> {
-    console.log("connected successfully!")
-})
+db.connect((err) => {
+  if (err) {
+    console.log("Database connection failed:", err);
+  } else {
+    console.log("Connected successfully!");
+  }
+});
 
-// app.get("/", (req, res) => {
-//     res.send("hello");
-//     const insertSql = "INSERT INTO movie_review (movieName, movieReview) VALUES ('titanic2','good movie');"
+app.get("/", (req, res) => {
+  res.send("API Running");
+});
 
-//     db.query(insertSql, (err, result) => {
-//         console.log(result);
-//     })
-// })
+app.get("/health", (req, res) => {
+  res.send("Server Running");
+});
 
+app.post("/apidata", (req, res) => {
+  const movieName = req.body.movieName;
+  const movieReview = req.body.movieReview;
 
-app.post("/apidata", cors(), (req, res) => {
-    
-    res.send({j: "hello"});
+  const insertSql =
+    "INSERT INTO movie_review (movieName, movieReview) VALUES (?, ?)";
 
-    const movieName = req.body.movieName
-    const movieReview = req.body.movieReview
+  db.query(insertSql, [movieName, movieReview], (err, result) => {
+    if (err) {
+      console.log(err);
+      return res.status(500).send(err);
+    }
 
-    const insertSql = "INSERT INTO movie_review (movieName, movieReview) VALUES (?,?);"
+    res.send({
+      success: true,
+      message: "Review added successfully",
+      result,
+    });
+  });
+});
 
-    db.query(insertSql, [movieName, movieReview], (err, result ) => {
-        if(err){
-            console.log(err)
-        }
-        // console.log(result);
-    })
-})
+app.get("/api/get", (req, res) => {
+  const selectSql = "SELECT * FROM movie_review";
 
-app.get("/api/get", (req, res)=> {
+  db.query(selectSql, (err, result) => {
+    if (err) {
+      console.log(err);
+      return res.status(500).send(err);
+    }
 
-    const selectSql = "SELECT * FROM movie_review";
-    
-    db.query(selectSql, (err, result) => {
-        // console.log(result)
-        res.send(result)
-        // let html = "<html><head><title>Hello</title></head><body><h2 style='color: red'}>I am ssr html</h2></body></html>"
-        // res.send(result)
-    })
-})
+    res.send(result);
+  });
+});
 
-// Api delete endpoint/route
-// passing parameter to the route
-app.delete('/api/delete/:id', (req, res) => {
+app.delete("/api/delete/:id", (req, res) => {
+  const id = req.params.id;
 
-    // const name = req.query.movie;
-    const name = req.params.id;
-    
-    const sqlDelete = "DELETE FROM movie_review WHERE id = ?";
-    db.query(sqlDelete, [name], (err, result) => {
-        console.log(result)
-    if (err) console.log(err);
-    })
-    })
+  const sqlDelete =
+    "DELETE FROM movie_review WHERE id = ?";
 
-// Api delete endpoint with query
-//Passing query
-// app.delete('/api/delete', (req, res) => {
+  db.query(sqlDelete, [id], (err, result) => {
+    if (err) {
+      console.log(err);
+      return res.status(500).send(err);
+    }
 
-//     const name = req.query.movie;
+    res.send({
+      success: true,
+      message: "Review deleted successfully",
+      result,
+    });
+  });
+});
 
-//     const sqlDelete = "DELETE FROM movie_review WHERE movieName = ?";
-//     db.query(sqlDelete, name, (err, result) => {
-//         console.log(result)
-//     if (err) console.log(err);
-//     })
-//     })
+app.delete("/api/deleteall", (req, res) => {
+  const sqlDeleteAll = "DELETE FROM movie_review";
 
-// *************************************************************************************
-// *************************************************************************************
-// *************************************************************************************
+  db.query(sqlDeleteAll, (err, result) => {
+    if (err) {
+      console.log(err);
+      return res.status(500).send(err);
+    }
 
+    res.send({
+      success: true,
+      message: "All reviews deleted successfully",
+      result,
+    });
+  });
+});
 
-//Delete all rows in table endpoint
-app.delete('/api/deleteall', (req, res) => {
+app.put("/api/update", (req, res) => {
+  const id = req.body.id;
+  const review = req.body.movieReview;
 
-    // const name = req.query.movie;
-    // const name = req.params.id;
-    
-    const sqlDeleteAll = "DELETE FROM movie_review";
-    db.query(sqlDeleteAll, (err, result) => {
-        console.log(result)
-    if (err) console.log(err);
-    })
-    })
+  const sqlUpdate =
+    "UPDATE movie_review SET movieReview = ? WHERE id = ?";
 
-//Update table values endpoint
-app.put('/api/update', (req, res) => {
+  db.query(sqlUpdate, [review, id], (err, result) => {
+    if (err) {
+      console.log(err);
+      return res.status(500).send(err);
+    }
 
-    // const name = req.query.movie;
-    const id = req.body.id;
-    const review = req.body.movieReview;
-
-    const sqlUpdate = "UPDATE movie_review SET movieReview = ? WHERE id = ?";
-
-    db.query(sqlUpdate, [review, id], (err, result) => {
-        console.log(result)
-    if (err) console.log(err);
-    })
-    })
-
+    res.send({
+      success: true,
+      message: "Review updated successfully",
+      result,
+    });
+  });
+});
 
 app.listen(PORT, () => {
-    console.log("server started at", PORT)
-})
+  console.log("Server started at", PORT);
+});
