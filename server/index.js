@@ -11,32 +11,38 @@ app.use(cors());
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-const db = mysql.createConnection({
-  host: process.env.MYSQLHOST || "localhost",
-  user: process.env.MYSQLUSER || "nikhil",
-  password: process.env.MYSQLPASSWORD || "password",
-  database: process.env.MYSQLDATABASE || "crud",
-  port: process.env.MYSQLPORT
-    ? Number(process.env.MYSQLPORT)
-    : 3306,
+// Railway MySQL Pool Connection
+const db = mysql.createPool({
+  connectionLimit: 10,
+  host: process.env.MYSQLHOST,
+  user: process.env.MYSQLUSER,
+  password: process.env.MYSQLPASSWORD,
+  database: process.env.MYSQLDATABASE,
+  port: Number(process.env.MYSQLPORT),
 });
 
-db.connect((err) => {
+// Test DB connection
+db.getConnection((err, connection) => {
   if (err) {
-    console.log("Database connection failed:", err);
+    console.log("DB CONNECTION ERROR:", err);
   } else {
-    console.log("Connected successfully!");
+    console.log("Database connected successfully!");
+
+    connection.release();
   }
 });
 
+// Root Route
 app.get("/", (req, res) => {
   res.send("API Running");
 });
 
+// Health Route
 app.get("/health", (req, res) => {
   res.send("Server Running");
 });
 
+// Create Review
 app.post("/apidata", (req, res) => {
   const movieName = req.body.movieName;
   const movieReview = req.body.movieReview;
@@ -46,8 +52,12 @@ app.post("/apidata", (req, res) => {
 
   db.query(insertSql, [movieName, movieReview], (err, result) => {
     if (err) {
-      console.log(err);
-      return res.status(500).send(err);
+      console.log("INSERT ERROR:", err);
+
+      return res.status(500).send({
+        success: false,
+        error: err,
+      });
     }
 
     res.send({
@@ -58,19 +68,25 @@ app.post("/apidata", (req, res) => {
   });
 });
 
+// Get Reviews
 app.get("/api/get", (req, res) => {
   const selectSql = "SELECT * FROM movie_review";
 
   db.query(selectSql, (err, result) => {
     if (err) {
-      console.log(err);
-      return res.status(500).send(err);
+      console.log("GET ERROR:", err);
+
+      return res.status(500).send({
+        success: false,
+        error: err,
+      });
     }
 
     res.send(result);
   });
 });
 
+// Delete Single Review
 app.delete("/api/delete/:id", (req, res) => {
   const id = req.params.id;
 
@@ -79,8 +95,12 @@ app.delete("/api/delete/:id", (req, res) => {
 
   db.query(sqlDelete, [id], (err, result) => {
     if (err) {
-      console.log(err);
-      return res.status(500).send(err);
+      console.log("DELETE ERROR:", err);
+
+      return res.status(500).send({
+        success: false,
+        error: err,
+      });
     }
 
     res.send({
@@ -91,13 +111,18 @@ app.delete("/api/delete/:id", (req, res) => {
   });
 });
 
+// Delete All Reviews
 app.delete("/api/deleteall", (req, res) => {
   const sqlDeleteAll = "DELETE FROM movie_review";
 
   db.query(sqlDeleteAll, (err, result) => {
     if (err) {
-      console.log(err);
-      return res.status(500).send(err);
+      console.log("DELETE ALL ERROR:", err);
+
+      return res.status(500).send({
+        success: false,
+        error: err,
+      });
     }
 
     res.send({
@@ -108,6 +133,7 @@ app.delete("/api/deleteall", (req, res) => {
   });
 });
 
+// Update Review
 app.put("/api/update", (req, res) => {
   const id = req.body.id;
   const review = req.body.movieReview;
@@ -117,8 +143,12 @@ app.put("/api/update", (req, res) => {
 
   db.query(sqlUpdate, [review, id], (err, result) => {
     if (err) {
-      console.log(err);
-      return res.status(500).send(err);
+      console.log("UPDATE ERROR:", err);
+
+      return res.status(500).send({
+        success: false,
+        error: err,
+      });
     }
 
     res.send({
@@ -129,6 +159,7 @@ app.put("/api/update", (req, res) => {
   });
 });
 
+// Start Server
 app.listen(PORT, () => {
   console.log("Server started at", PORT);
 });
