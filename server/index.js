@@ -20,7 +20,8 @@ const db = mysql.createPool({
   user: process.env.MYSQLUSER,
   password: process.env.MYSQLPASSWORD,
   database: process.env.MYSQLDATABASE,
-  port: Number(process.env.MYSQLPORT),
+  // port: Number(process.env.MYSQLPORT),
+  port: Number(process.env.MYSQLPORT || 3306),
 });
 
 // Test DB connection
@@ -36,8 +37,14 @@ db.getConnection((err, connection) => {
 
 // Root Route
 app.get("/", (req, res) => {
-  res.send("API Running");
+  res.status(200).json({
+    success: true,
+    message: "API Running",
+  });
 });
+// app.get("/", (req, res) => {
+//   res.send("API Running");
+// });
 
 // Health Route
 app.get("/health", (req, res) => {
@@ -162,6 +169,6 @@ app.put("/api/update", (req, res) => {
 });
 
 // Start Server
-app.listen(PORT, '0.0.0.0', () => {
-  console.log("Server started at", PORT);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server started at ${PORT}`);
 });
